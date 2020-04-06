@@ -60,36 +60,14 @@ void load_volume_table() {
   fstab.emplace_back(FstabEntry{
       .mount_point = "/tmp", .fs_type = "ramdisk", .blk_device = "ramdisk", .length = 0 });
 
-  Fstab fake_fstab;
   std::cout << "recovery filesystem table" << std::endl << "=========================" << std::endl;
   for (size_t i = 0; i < fstab.size(); ++i) {
     const auto& entry = fstab[i];
     std::cout << "  " << i << " " << entry.mount_point << " "
               << " " << entry.fs_type << " " << entry.blk_device << " " << entry.length
               << std::endl;
-
-    if (std::find_if(fake_fstab.begin(), fake_fstab.end(), [entry](const FstabEntry& e) {
-          return entry.mount_point == e.mount_point;
-        }) == fake_fstab.end()) {
-      FstabEntry* entry_detectfs =
-          android::fs_mgr::GetEntryForMountPointTryDetectFs(&fstab, entry.mount_point);
-      if (entry_detectfs == &entry) {
-        fake_fstab.emplace_back(entry);
-      }
-    }
   }
   std::cout << std::endl;
-
-  // Create a boring /etc/fstab so tools like Busybox work
-  FILE* file = fopen("/etc/fstab", "w");
-  if (file) {
-    for (auto& entry : fake_fstab) {
-      write_fstab_entry(entry, file);
-    }
-    fclose(file);
-  } else {
-    LOG(ERROR) << "Unable to create /etc/fstab";
-  }
 }
 
 Volume* volume_for_mount_point(const std::string& mount_point) {
